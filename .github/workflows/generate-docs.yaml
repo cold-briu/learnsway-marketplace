@@ -1,0 +1,40 @@
+name: Generate docs
+
+on: push
+
+jobs:
+  example-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: "recursive"
+      - name: Check out submodule
+        uses: actions/checkout@v2
+        with:
+          repository: "cold-briu/fuel-guides-template" # replace with the URL of the submodule repository
+          ref: "main" # replace with the branch or commit of the submodule to check out
+          path: "./guide" # replace with the relative path of the submodule in the repository
+      - name: Run script in submodule
+        run: |
+          cd ./guide
+          ./generate-docs.sh ../README.md
+
+      - name: Build step
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18
+      - run: |
+          cd ./guide
+          npm install
+          npm run build
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          build-dir: guide/out
